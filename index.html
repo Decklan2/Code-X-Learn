@@ -163,8 +163,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;heig
         <span class="pane-title">editor</span>
         <div style="display:flex;gap:8px;align-items:center">
           <span class="pane-file" id="p-file"></span>
-          <button id="copy-btn" onclick="copyCode()" style="font-family:'DM Mono',monospace;font-size:10px;padding:3px 8px;border-radius:4px;border:.5px solid var(--border2);background:none;color:var(--text2);cursor:pointer">copy</button>
-          <button onclick="downloadCode()" style="font-family:'DM Mono',monospace;font-size:10px;padding:3px 8px;border-radius:4px;border:.5px solid var(--border2);background:none;color:var(--text2);cursor:pointer">download .cx</button>
         </div>
       </div>
       <textarea class="code-area" id="editor" spellcheck="false" placeholder="Read the scenario first..." style="pointer-events:none;opacity:0.4"></textarea>
@@ -712,31 +710,6 @@ function updateMsgCounter(){
   } else {
     el.style.display='none';
   }
-}
-
-// ── copy / download ───────────────────────────────────────────────────────────
-function copyCode(){
-  const code=document.getElementById('editor').value;
-  if(!code.trim())return;
-  navigator.clipboard.writeText(code).then(()=>{
-    const btn=document.getElementById('copy-btn');
-    if(btn){const orig=btn.textContent;btn.textContent='copied!';setTimeout(()=>btn.textContent=orig,1500);}
-  }).catch(()=>{
-    // fallback
-    const ta=document.createElement('textarea');
-    ta.value=code;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
-  });
-}
-
-function downloadCode(){
-  const code=document.getElementById('editor').value;
-  if(!code.trim())return;
-  const blob=new Blob([code],{type:'text/plain'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=scene.file;
-  a.click();
-  URL.revokeObjectURL(a.href);
 }
 
 // ── output ────────────────────────────────────────────────────────────────────
