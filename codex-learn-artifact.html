@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Code X · Learn</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f8f7f4;--surface:#fff;--surface2:#f0efe9;--surface3:#e8e7e0;
+  --text:#1a1a18;--text2:#6b6b67;--text3:#9b9b96;
+  --border:rgba(0,0,0,.10);--border2:rgba(0,0,0,.18);
+  --tag-ask-bg:#dbeafe;--tag-ask-fg:#1d4ed8;
+  --tag-say-bg:#dcfce7;--tag-say-fg:#15803d;
+  --tag-resp-bg:#fef9c3;--tag-resp-fg:#854d0e;
+  --tag-gather-bg:#ede9fe;--tag-gather-fg:#6d28d9;
+  --tag-note-bg:#f1f0ec;--tag-note-fg:#6b6b67;
+  --tag-error-bg:#fee2e2;--tag-error-fg:#991b1b;
+  --pass:#15803d;--fail:#991b1b;
+  --radius:10px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#161614;--surface:#1e1e1c;--surface2:#252523;--surface3:#2e2e2b;
+  --text:#e8e8e2;--text2:#9b9b96;--text3:#6b6b67;
+  --border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.16);
+  --tag-ask-bg:#1e3a8a;--tag-ask-fg:#93c5fd;
+  --tag-say-bg:#14532d;--tag-say-fg:#86efac;
+  --tag-resp-bg:#78350f;--tag-resp-fg:#fde68a;
+  --tag-gather-bg:#3b1f6b;--tag-gather-fg:#c4b5fd;
+  --tag-note-bg:#2a2a27;--tag-note-fg:#9b9b96;
+  --tag-error-bg:#7f1d1d;--tag-error-fg:#fca5a5;
+  --pass:#86efac;--fail:#fca5a5;
+}}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:44px;background:var(--surface);border-bottom:.5px solid var(--border);flex-shrink:0;gap:12px}
+.brand{font-size:13px;font-weight:500;white-space:nowrap}
+.brand span{color:var(--text2);font-weight:400}
+.tabs{display:flex;gap:2px;background:var(--surface2);padding:3px;border-radius:8px;overflow-x:auto}
+.tab{font-family:'DM Mono',monospace;font-size:11px;padding:4px 10px;border-radius:5px;border:none;cursor:pointer;color:var(--text2);background:none;white-space:nowrap;transition:background .1s,color .1s}
+.tab:hover{color:var(--text);background:var(--surface3)}
+.tab.active{background:var(--surface);color:var(--text)}
+.run-btn{font-family:'DM Mono',monospace;font-size:11px;padding:5px 14px;border-radius:5px;border:.5px solid var(--border2);background:var(--text);color:var(--bg);cursor:pointer;white-space:nowrap;transition:opacity .12s;flex-shrink:0}
+.run-btn:hover{opacity:.82}
+.run-btn:active{transform:scale(.97)}
+.layout{display:grid;grid-template-columns:260px 1fr 300px;flex:1;min-height:0;overflow:hidden}
+.scenario-panel{border-right:.5px solid var(--border);background:var(--surface);display:flex;flex-direction:column;overflow-y:auto}
+.panel-hd{padding:14px 16px 10px;border-bottom:.5px solid var(--border);flex-shrink:0}
+.panel-label{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:5px}
+.scenario-title{font-family:'Spectral',serif;font-size:17px;font-weight:600;margin-bottom:2px}
+.scenario-file{font-size:10px;color:var(--text3)}
+.scenario-body{padding:14px 16px;font-family:'Spectral',serif;font-size:13.5px;line-height:1.7;color:var(--text2);white-space:pre-wrap}
+.kw-section{padding:0 16px 16px}
+.kw-label{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:7px}
+.kw-list{display:flex;flex-wrap:wrap;gap:5px}
+.kw{font-size:11px;padding:2px 7px;border-radius:4px;background:var(--surface2);color:var(--text2);border:.5px solid var(--border);font-family:'DM Mono',monospace}
+.editor-col{display:flex;flex-direction:column;border-right:.5px solid var(--border);min-height:0}
+.pane{display:flex;flex-direction:column;min-height:0;flex:1}
+.pane-hd{display:flex;align-items:center;justify-content:space-between;padding:7px 14px;border-bottom:.5px solid var(--border);background:var(--surface);flex-shrink:0}
+.pane-title{font-size:10px;color:var(--text2);letter-spacing:.07em;text-transform:uppercase}
+.pane-file{font-size:10px;color:var(--text3)}
+.code-area{flex:1;width:100%;padding:14px 18px;border:none;outline:none;background:var(--surface);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;line-height:1.75;resize:none;min-height:0}
+.code-area::placeholder{color:var(--text3)}
+.output-pane{flex:0 0 200px;border-top:.5px solid var(--border);background:var(--surface2);display:flex;flex-direction:column;min-height:0}
+.output-scroll{flex:1;overflow-y:auto;padding:10px 14px}
+.out-empty{font-size:12px;color:var(--text3);font-style:italic}
+.out-sep{font-size:9px;color:var(--text3);padding:5px 0 2px;letter-spacing:.06em;text-transform:uppercase;border-top:.5px solid var(--border);margin-top:4px}
+.out-sep:first-child{border-top:none;margin-top:0}
+.out-line{display:flex;align-items:flex-start;gap:7px;padding:2px 0;font-size:12px;line-height:1.6}
+.out-tag{font-size:9px;letter-spacing:.05em;padding:1px 5px;border-radius:3px;flex-shrink:0;margin-top:2px;font-weight:500;text-transform:uppercase}
+.tag-ask{background:var(--tag-ask-bg);color:var(--tag-ask-fg)}
+.tag-say{background:var(--tag-say-bg);color:var(--tag-say-fg)}
+.tag-resp{background:var(--tag-resp-bg);color:var(--tag-resp-fg)}
+.tag-gather{background:var(--tag-gather-bg);color:var(--tag-gather-fg)}
+.tag-note{background:var(--tag-note-bg);color:var(--tag-note-fg)}
+.tag-error{background:var(--tag-error-bg);color:var(--tag-error-fg)}
+.out-text{color:var(--text)}
+.results{display:none;flex-shrink:0;border-top:.5px solid var(--border);background:var(--surface)}
+.result-row{display:flex}
+.result{flex:1;padding:6px 12px;font-size:10px;display:flex;align-items:center;gap:6px;color:var(--text3);border-right:.5px solid var(--border)}
+.result:last-child{border-right:none}
+.result.pass{color:var(--pass)}
+.result.fail{color:var(--fail)}
+.rdot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.chat-panel{display:flex;flex-direction:column;min-height:0;background:var(--surface)}
+.chat-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.msg{max-width:92%;font-family:'Spectral',serif;font-size:13px;line-height:1.6;padding:9px 13px;border-radius:var(--radius)}
+.msg.user{align-self:flex-end;background:var(--text);color:var(--bg);border-bottom-right-radius:3px}
+.msg.ai{align-self:flex-start;background:var(--surface2);color:var(--text);border-bottom-left-radius:3px}
+.msg.ai code{font-family:'DM Mono',monospace;font-size:11px;background:var(--surface3);padding:1px 4px;border-radius:3px}
+.msg.thinking{color:var(--text3);font-style:italic;font-size:11px;background:none;padding:2px 0;align-self:flex-start}
+.chat-foot{display:flex;gap:8px;padding:10px 12px;border-top:.5px solid var(--border);flex-shrink:0}
+.chat-input{flex:1;font-family:'Spectral',serif;font-size:13px;padding:7px 11px;border-radius:8px;border:.5px solid var(--border2);background:var(--surface2);color:var(--text);outline:none;resize:none;line-height:1.5;min-height:36px;max-height:100px}
+.chat-input:focus{border-color:var(--text3)}
+.send-btn{font-family:'DM Mono',monospace;font-size:11px;padding:7px 12px;border-radius:8px;border:.5px solid var(--border2);background:var(--surface2);color:var(--text2);cursor:pointer;align-self:flex-end;transition:background .1s}
+.send-btn:hover{background:var(--surface3);color:var(--text)}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);align-items:center;justify-content:center;z-index:50;backdrop-filter:blur(2px)}
+.overlay.active{display:flex}
+.modal{background:var(--surface);border:.5px solid var(--border2);border-radius:14px;padding:20px 24px;width:280px;box-shadow:0 8px 32px rgba(0,0,0,.15)}
+.modal-type{font-size:10px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:9px;font-weight:500}
+.modal-type.ask-t{color:var(--tag-ask-fg)}
+.modal-type.gather-t{color:var(--tag-gather-fg)}
+.modal-q{font-family:'Spectral',serif;font-size:15px;line-height:1.5;margin-bottom:16px}
+.ask-btns{display:flex;gap:8px}
+.ask-btn{flex:1;padding:8px;border-radius:6px;border:.5px solid var(--border2);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;background:var(--surface2);color:var(--text);transition:background .1s,color .1s}
+.ask-btn.y:hover{background:var(--tag-say-bg);color:var(--tag-say-fg)}
+.ask-btn.n:hover{background:var(--tag-note-bg);color:var(--tag-note-fg)}
+.g-field{width:100%;padding:9px 11px;border-radius:6px;border:.5px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;outline:none;margin-bottom:9px;transition:border-color .1s}
+.g-field:focus{border-color:var(--tag-gather-fg)}
+.g-btn{width:100%;padding:8px;border-radius:6px;border:.5px solid var(--tag-gather-fg);background:var(--tag-gather-bg);color:var(--tag-gather-fg);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;transition:opacity .1s}
+.g-btn:hover{opacity:.8}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">Code X <span>· learn</span></div>
+  <div class="tabs" id="tabs"></div>
+  <button class="run-btn" id="run-btn" onclick="runCode()" disabled style="opacity:0.35;cursor:default">&#9654; run</button>
+  <span style="font-size:12px;font-weight:500;color:#991b1b;white-space:nowrap;background:#fee2e2;padding:4px 10px;border-radius:5px">Your code is not saved when tabs are switched</span><span style="font-size:10px;color:var(--text3);white-space:nowrap">· tutor uses AI</span>
+</div>
+
+<div class="layout">
+
+  <div class="scenario-panel">
+    <div class="panel-hd">
+      <div class="panel-label">Scenario</div>
+      <div class="scenario-title" id="s-title"></div>
+      <div class="scenario-file" id="s-file"></div>
+    </div>
+    <div class="scenario-body" id="s-body"></div>
+    <div class="kw-section">
+      <div class="kw-label">Keywords</div>
+      <div class="kw-list">
+        <span class="kw">ask "..."</span>
+        <span class="kw">if yes</span>
+        <span class="kw">if no</span>
+        <span class="kw">end if</span>
+        <span class="kw">gather name</span>
+        <span class="kw">say "..."</span>
+        <span class="kw">explain "..."</span>
+        <span class="kw">respect the boundary</span>
+        <span class="kw">boundary x is N</span>
+        <span class="kw">stop</span>
+        <span class="kw">STOP</span>
+        <span class="kw">loop N times</span>
+        <span class="kw">end loop</span>
+        <span class="kw">current</span>
+        <span class="kw">name is "value"</span>
+        <span class="kw">"a" + variable</span>
+        <span class="kw">// comment</span>
+      </div>
+    </div>
+    <div style="padding:12px 14px 16px;border-top:.5px solid rgba(0,0,0,.10);flex-shrink:0">
+      <button id="understood-btn" onclick="understood()" style="width:100%;font-family:'DM Mono',monospace;font-size:11px;padding:8px;border-radius:6px;border:.5px solid rgba(0,0,0,.18);background:var(--text);color:var(--bg);cursor:pointer;transition:opacity .12s">I've read the scenario &#8594;</button>
+    </div>
+  </div>
+
+  <div class="editor-col">
+    <div class="pane">
+      <div class="pane-hd">
+        <span class="pane-title">editor</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="pane-file" id="p-file"></span>
+          <button id="copy-btn" onclick="copyCode()" style="font-family:'DM Mono',monospace;font-size:10px;padding:3px 8px;border-radius:4px;border:.5px solid var(--border2);background:none;color:var(--text2);cursor:pointer">copy</button>
+          <button onclick="downloadCode()" style="font-family:'DM Mono',monospace;font-size:10px;padding:3px 8px;border-radius:4px;border:.5px solid var(--border2);background:none;color:var(--text2);cursor:pointer">download .cx</button>
+        </div>
+      </div>
+      <textarea class="code-area" id="editor" spellcheck="false" placeholder="Read the scenario first..." style="pointer-events:none;opacity:0.4"></textarea>
+    </div>
+    <div class="output-pane">
+      <div class="pane-hd"><span class="pane-title">output</span></div>
+      <div class="output-scroll" id="out"><span class="out-empty">press run &#8594;</span></div>
+      <div class="results" id="results">
+        <div class="result-row">
+          <div class="result" id="r-yes"><span class="rdot"></span>your run</div>
+          <div class="result" id="r-no"><span class="rdot"></span>if someone says no</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-panel">
+    <div class="pane-hd">
+      <span class="pane-title">tutor</span>
+      <button id="tutor-toggle" onclick="toggleTutor()" style="font-family:'DM Mono',monospace;font-size:10px;padding:3px 8px;border-radius:4px;border:.5px solid var(--border2);background:none;color:var(--text2);cursor:pointer">disable tutor</button>
+    </div>
+    <div id="tutor-disabled-banner" style="display:none;align-items:center;justify-content:center;padding:8px 12px;background:#fee2e2;color:#991b1b;font-size:11px;font-family:'DM Mono',monospace;flex-shrink:0">tutor is disabled</div>
+    <div id="msg-counter" style="display:none;padding:6px 12px;font-size:10px;font-family:'DM Mono',monospace;color:var(--text2);background:var(--surface2);border-bottom:.5px solid var(--border);flex-shrink:0;text-align:center"></div>
+    <div id="api-key-panel" style="border-bottom:.5px solid var(--border);flex-shrink:0">
+      <div id="api-key-toggle" onclick="toggleKeyPanel()" style="padding:6px 14px;font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;cursor:pointer;user-select:none">&#9654; using a downloaded file? add API key</div>
+      <div id="api-key-form" style="display:none;padding:0 14px 10px">
+        <div style="font-size:10px;color:var(--text2);font-family:'DM Mono',monospace;margin-bottom:6px">Stays in your browser, sent only to Anthropic</div>
+        <div style="display:flex;gap:6px">
+          <input id="api-key-input" type="password" placeholder="sk-ant-..." autocomplete="off"
+            style="flex:1;font-family:'DM Mono',monospace;font-size:11px;padding:6px 10px;border-radius:6px;border:.5px solid var(--border2);background:var(--surface);color:var(--text);outline:none"/>
+          <button onclick="saveApiKey()" style="font-family:'DM Mono',monospace;font-size:10px;padding:6px 10px;border-radius:6px;border:.5px solid var(--border2);background:var(--text);color:var(--bg);cursor:pointer">save</button>
+        </div>
+        <div id="api-key-status" style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:5px"></div>
+      </div>
+    </div>
+    <div class="chat-msgs" id="chat"></div>
+    <div style="padding:4px 12px 0;font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;flex-shrink:0;letter-spacing:0.03em">tutor works inside Claude.ai or with your own API key</div>
+    <div class="chat-foot" id="chat-foot">
+      <textarea class="chat-input" id="chat-in" placeholder="Ask for help..." rows="1"></textarea>
+      <button class="send-btn" onclick="send()">send</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="overlay" id="ask-overlay">
+  <div class="modal">
+    <div class="modal-type ask-t">ask</div>
+    <div class="modal-q" id="ask-q"></div>
+    <div class="ask-btns">
+      <button class="ask-btn y" onclick="answerAsk(true)">yes</button>
+      <button class="ask-btn n" onclick="answerAsk(false)">no</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="gather-overlay">
+  <div class="modal">
+    <div class="modal-type gather-t">gather</div>
+    <div class="modal-q" id="gather-q"></div>
+    <input class="g-field" id="g-in" type="text" placeholder="type here..." autocomplete="off"/>
+    <button class="g-btn" onclick="submitGather()">submit &#8594;</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const TokenType = {
+  ASK:'ASK',RESPECT:'RESPECT',CARE:'CARE',BOUNDARY:'BOUNDARY',EXPLAIN:'EXPLAIN',CONSENT:'CONSENT',
+  SAY:'SAY',SHOW:'SHOW',GATHER:'GATHER',STOP:'STOP',MANDATORY_STOP:'MANDATORY_STOP',
+  IF:'IF',WHEN:'WHEN',ELSE:'ELSE',END:'END',
+  DOT:'DOT',LINE:'LINE',LOOP:'LOOP',SPIRAL:'SPIRAL',
+  DEFINE:'DEFINE',CONNECT:'CONNECT',
+  IS:'IS',GROWS:'GROWS',BECOMES:'BECOMES',BY:'BY',
+  RECYCLE:'RECYCLE',PRESERVE:'PRESERVE',COMPOST:'COMPOST',
+  FROM:'FROM',TO:'TO',OF:'OF',AND:'AND',OR:'OR',TIMES:'TIMES',WHILE:'WHILE',THE:'THE',BEFORE:'BEFORE',
+  YES:'YES',NO:'NO',TRUE:'TRUE',FALSE:'FALSE',NOT:'NOT',
+  STRING:'STRING',NUMBER:'NUMBER',SYMBOL:'SYMBOL',IDENTIFIER:'IDENTIFIER',
+  PLUS:'PLUS',MINUS:'MINUS',MULTIPLY:'MULTIPLY',DIVIDE:'DIVIDE',
+  GREATER:'GREATER',LESS:'LESS',GREATER_EQUAL:'GREATER_EQUAL',LESS_EQUAL:'LESS_EQUAL',
+  COLON:'COLON',COMMA:'COMMA',LPAREN:'LPAREN',RPAREN:'RPAREN',
+  NEWLINE:'NEWLINE',INDENT:'INDENT',DEDENT:'DEDENT',EOF:'EOF',EMERGENCY_STOP:'EMERGENCY_STOP'
+};
+
+class Lexer {
+  constructor(source) { this.source=source;this.pos=0;this.line=1;this.column=1;this.tokens=[];this.indentStack=[0]; }
+  keywords={'ask':TokenType.ASK,'respect':TokenType.RESPECT,'care':TokenType.CARE,'boundary':TokenType.BOUNDARY,'explain':TokenType.EXPLAIN,'consent':TokenType.CONSENT,'say':TokenType.SAY,'show':TokenType.SHOW,'gather':TokenType.GATHER,'stop':TokenType.STOP,'STOP':TokenType.MANDATORY_STOP,'if':TokenType.IF,'when':TokenType.WHEN,'else':TokenType.ELSE,'end':TokenType.END,'dot':TokenType.DOT,'line':TokenType.LINE,'loop':TokenType.LOOP,'spiral':TokenType.SPIRAL,'define':TokenType.DEFINE,'connect':TokenType.CONNECT,'is':TokenType.IS,'grows':TokenType.GROWS,'becomes':TokenType.BECOMES,'by':TokenType.BY,'recycle':TokenType.RECYCLE,'preserve':TokenType.PRESERVE,'compost':TokenType.COMPOST,'from':TokenType.FROM,'to':TokenType.TO,'of':TokenType.OF,'and':TokenType.AND,'or':TokenType.OR,'times':TokenType.TIMES,'while':TokenType.WHILE,'the':TokenType.THE,'before':TokenType.BEFORE,'about':TokenType.OF,'yes':TokenType.YES,'no':TokenType.NO,'true':TokenType.TRUE,'false':TokenType.FALSE,'not':TokenType.NOT};
+  peek(o=0){const i=this.pos+o;return i<this.source.length?this.source[i]:null;}
+  advance(){const c=this.peek();this.pos++;if(c==='\n'){this.line++;this.column=1;}else{this.column++;}return c;}
+  skipWhitespace(){while(this.peek()&&/[ \t\r]/.test(this.peek()))this.advance();}
+  skipComment(){if(this.peek()==='/'&&this.peek(1)==='/'){while(this.peek()&&this.peek()!=='\n')this.advance();}}
+  readString(){const line=this.line;let v='';this.advance();while(this.peek()&&this.peek()!=='"'){if(this.peek()==='\\'){this.advance();const n=this.advance();switch(n){case 'n':v+='\n';break;case 't':v+='\t';break;case '\\':v+='\\';break;case '"':v+='"';break;default:v+=n;}}else{v+=this.advance();}}this.advance();return{type:TokenType.STRING,value:v,line};}
+  readNumber(){const line=this.line;let v='';while(this.peek()&&/[0-9.]/.test(this.peek()))v+=this.advance();return{type:TokenType.NUMBER,value:parseFloat(v),line};}
+  readSymbol(){let i=this.pos+1,la='';while(i<this.source.length&&this.source[i]!==':'&&this.source[i]!=='\n'&&this.source[i]!==' '&&this.source[i]!=='"'&&this.source[i]!=='('){la+=this.source[i];i++;}if(i<this.source.length&&this.source[i]===':'&&la.length>0){let v='';this.advance();while(this.peek()&&this.peek()!==':')v+=this.advance();this.advance();return{type:TokenType.SYMBOL,value:':'+v+':'};}this.advance();return{type:TokenType.COLON,value:':'};}
+  readIdentifier(){const line=this.line;let v='';while(this.peek()&&/[a-zA-Z0-9_]/.test(this.peek()))v+=this.advance();const t=this.keywords[v]||TokenType.IDENTIFIER;return{type:t,value:v,line};}
+  handleIndentation(spaces){const cur=this.indentStack[this.indentStack.length-1];if(spaces>cur){this.indentStack.push(spaces);return[{type:TokenType.INDENT,value:spaces}];}else if(spaces<cur){const d=[];while(this.indentStack.length>1&&this.indentStack[this.indentStack.length-1]>spaces){this.indentStack.pop();d.push({type:TokenType.DEDENT,value:spaces});}return d;}return[];}
+  tokenize(){
+    while(this.pos<this.source.length){
+      this.skipWhitespace();this.skipComment();
+      if(this.pos>=this.source.length)break;
+      const c=this.peek();
+      if(c==='\n'){this.advance();this.tokens.push({type:TokenType.NEWLINE,value:'\n',line:this.line-1});let s=0;while(this.peek()===' '){s++;this.advance();}if(this.peek()!=='\n'&&this.peek()!==null){const it=this.handleIndentation(s);this.tokens.push(...it);}continue;}
+      if(c==='"'){this.tokens.push(this.readString());continue;}
+      if(/[0-9]/.test(c)){this.tokens.push(this.readNumber());continue;}
+      if(c===':'){this.tokens.push(this.readSymbol());continue;}
+      if(/[a-zA-Z_]/.test(c)){this.tokens.push(this.readIdentifier());continue;}
+      switch(c){
+        case '+':this.advance();this.tokens.push({type:TokenType.PLUS,value:'+'});break;
+        case '-':this.advance();this.tokens.push({type:TokenType.MINUS,value:'-'});break;
+        case '*':this.advance();this.tokens.push({type:TokenType.MULTIPLY,value:'*'});break;
+        case '/':this.advance();this.tokens.push({type:TokenType.DIVIDE,value:'/'});break;
+        case '>':this.advance();if(this.peek()==='='){this.advance();this.tokens.push({type:TokenType.GREATER_EQUAL,value:'>='});}else{this.tokens.push({type:TokenType.GREATER,value:'>'});}break;
+        case '<':this.advance();if(this.peek()==='='){this.advance();this.tokens.push({type:TokenType.LESS_EQUAL,value:'<='});}else{this.tokens.push({type:TokenType.LESS,value:'<'});}break;
+        case '(':this.advance();this.tokens.push({type:TokenType.LPAREN,value:'('});break;
+        case ')':this.advance();this.tokens.push({type:TokenType.RPAREN,value:')'});break;
+        case ',':this.advance();this.tokens.push({type:TokenType.COMMA,value:','});break;
+        default:throw new Error(`Unexpected char: ${c} at line ${this.line}`);
+      }
+    }
+    while(this.indentStack.length>1){this.indentStack.pop();this.tokens.push({type:TokenType.DEDENT,value:0});}
+    this.tokens.push({type:TokenType.EOF,value:null});
+    return this.tokens;
+  }
+}
+
+class ASTNode{constructor(t){this.type=t;}}
+class Program extends ASTNode{constructor(s){super('Program');this.statements=s;}}
+class AskStatement extends ASTNode{constructor(m){super('AskStatement');this.message=m;}}
+class SayStatement extends ASTNode{constructor(e){super('SayStatement');this.expression=e;}}
+class ShowStatement extends ASTNode{constructor(e){super('ShowStatement');this.expression=e;}}
+class RespectStatement extends ASTNode{constructor(t){super('RespectStatement');this.target=t;}}
+class StopStatement extends ASTNode{constructor(m=false,t=null){super('StopStatement');this.mandatory=m;this.target=t;}}
+class IfStatement extends ASTNode{constructor(c,t,e=null){super('IfStatement');this.condition=c;this.thenBlock=t;this.elseBlock=e;}}
+class DotDefinition extends ASTNode{constructor(n,a){super('DotDefinition');this.name=n;this.action=a;}}
+class LineDefinition extends ASTNode{constructor(n,b){super('LineDefinition');this.name=n;this.body=b;}}
+class LoopStatement extends ASTNode{constructor(t,c,b){super('LoopStatement');this.times=t;this.condition=c;this.body=b;}}
+class SpiralStatement extends ASTNode{constructor(n,f,b){super('SpiralStatement');this.name=n;this.from=f;this.body=b;}}
+class Assignment extends ASTNode{constructor(n,v,o='is'){super('Assignment');this.name=n;this.value=v;this.operator=o;}}
+class BinaryExpression extends ASTNode{constructor(l,o,r){super('BinaryExpression');this.left=l;this.operator=o;this.right=r;}}
+class Identifier extends ASTNode{constructor(n){super('Identifier');this.name=n;}}
+class Literal extends ASTNode{constructor(v,d){super('Literal');this.value=v;this.dataType=d;}}
+class CallExpression extends ASTNode{constructor(n){super('CallExpression');this.name=n;}}
+class AnswerCheck extends ASTNode{constructor(expected){super('AnswerCheck');this.expected=expected;}}
+class SpiralCall extends ASTNode{constructor(name,arg){super('SpiralCall');this.name=name;this.arg=arg;}}
+class ExplainStatement extends ASTNode{constructor(m){super('ExplainStatement');this.message=m;}}
+class GatherStatement extends ASTNode{constructor(n){super('GatherStatement');this.name=n;}}
+class CareStatement extends ASTNode{constructor(t){super('CareStatement');this.target=t;}}
+class BoundaryStatement extends ASTNode{constructor(n,v){super('BoundaryStatement');this.name=n;this.value=v;}}
+
+class Parser{
+  constructor(tokens){this.tokens=tokens;this.pos=0;}
+  peek(o=0){const i=this.pos+o;return i<this.tokens.length?this.tokens[i]:this.tokens[this.tokens.length-1];}
+  advance(){return this.tokens[this.pos++];}
+  expect(type){const t=this.advance();if(t.type!==type)throw new Error(`Line ${t.line||'?'}: Expected ${type} but got ${t.type} ("${t.value}")`);return t;}
+  match(...types){return types.includes(this.peek().type);}
+  skipNewlines(){while(this.match(TokenType.NEWLINE))this.advance();}
+  parse(){const s=[];this.skipNewlines();while(!this.match(TokenType.EOF)){while(this.match(TokenType.DEDENT))this.advance();if(this.match(TokenType.EOF))break;s.push(this.parseStatement());this.skipNewlines();}return new Program(s);}
+  parseStatement(){
+    this.skipNewlines();
+    if(this.match(TokenType.ASK))return this.parseAsk();
+    if(this.match(TokenType.RESPECT))return this.parseRespect();
+    if(this.match(TokenType.EXPLAIN))return this.parseExplain();
+    if(this.match(TokenType.BOUNDARY))return this.parseBoundary();
+    if(this.match(TokenType.SAY))return this.parseSay();
+    if(this.match(TokenType.SHOW))return this.parseShow();
+    if(this.match(TokenType.GATHER)){this.advance();const name=this.expect(TokenType.IDENTIFIER).value;return new GatherStatement(name);}
+    if(this.match(TokenType.CARE)){this.advance();if(this.match(TokenType.OF))this.advance();const parts=[];while(!this.match(TokenType.NEWLINE,TokenType.EOF))parts.push(this.advance().value);return new CareStatement(parts.join(' '));}
+    if(this.match(TokenType.STOP)){this.advance();return new StopStatement(false);}
+    if(this.match(TokenType.MANDATORY_STOP)){this.advance();return new StopStatement(true);}
+    if(this.match(TokenType.IF))return this.parseIf();
+    if(this.match(TokenType.DOT))return this.parseDot();
+    if(this.match(TokenType.LINE))return this.parseLine();
+    if(this.match(TokenType.LOOP))return this.parseLoop();
+    if(this.match(TokenType.SPIRAL))return this.parseSpiral();
+    if(this.match(TokenType.IDENTIFIER)){
+      const name=this.advance().value;
+      if(this.match(TokenType.FROM)){this.advance();const arg=this.parseExpression();return new SpiralCall(name,arg);}
+      if(this.match(TokenType.IS,TokenType.GROWS,TokenType.BECOMES))return this.parseAssignment(name);
+      return new CallExpression(name);
+    }
+    throw new Error(`Line ${this.peek().line||'?'}: Unexpected token '${this.peek().value}'`);
+  }
+  parseAsk(){this.expect(TokenType.ASK);const m=this.expect(TokenType.STRING).value;return new AskStatement(m);}
+  parseRespect(){this.expect(TokenType.RESPECT);const p=[];while(!this.match(TokenType.NEWLINE,TokenType.EOF))p.push(this.advance().value);return new RespectStatement(p.join(' '));}
+  parseExplain(){this.expect(TokenType.EXPLAIN);const m=this.expect(TokenType.STRING).value;return new ExplainStatement(m);}
+  parseBoundary(){this.expect(TokenType.BOUNDARY);const n=this.expect(TokenType.IDENTIFIER).value;this.expect(TokenType.IS);const v=this.parseExpression();return new BoundaryStatement(n,v);}
+  parseSay(){this.expect(TokenType.SAY);return new SayStatement(this.parseExpression());}
+  parseShow(){this.expect(TokenType.SHOW);return new ShowStatement(this.parseExpression());}
+  parseIf(){
+    this.expect(TokenType.IF);const cond=this.parseCondition();this.skipNewlines();
+    const thenBlock=[];
+    if(this.match(TokenType.INDENT))this.advance();
+    while(!this.match(TokenType.EOF)){
+      this.skipNewlines();
+      while(this.match(TokenType.DEDENT)){
+        if(this.peek().value===0){this.advance();break;}
+        this.advance();
+      }
+      if(this.match(TokenType.EOF))break;
+      if(this.match(TokenType.IF,TokenType.END))break;
+      thenBlock.push(this.parseStatement());
+      this.skipNewlines();
+    }
+    let elseBlock=null;
+    if(this.match(TokenType.IF)&&this.pos+1<this.tokens.length&&this.tokens[this.pos+1].type===TokenType.NO){
+      elseBlock=[this.parseIf()];
+    } else if(this.match(TokenType.END)){
+      const nextIsIf=this.pos+1<this.tokens.length&&this.tokens[this.pos+1].type===TokenType.IF;
+      if(nextIsIf){this.advance();this.advance();}
+    }
+    return new IfStatement(cond,thenBlock,elseBlock);
+  }
+  parseCondition(){
+    if(this.match(TokenType.YES)){this.advance();return new AnswerCheck(true);}
+    if(this.match(TokenType.NO)){this.advance();return new AnswerCheck(false);}
+    return this.parseExpression();
+  }
+  parseDot(){
+    this.expect(TokenType.DOT);const name=this.expect(TokenType.IDENTIFIER).value;
+    if(this.match(TokenType.COLON)){this.advance();const a=this.parseStatement();return new DotDefinition(name,a);}
+    if(this.match(TokenType.IS))return this.parseAssignment(name);
+    return new Identifier(name);
+  }
+  parseLine(){
+    this.expect(TokenType.LINE);const name=this.expect(TokenType.IDENTIFIER).value;this.skipNewlines();
+    const body=[];
+    if(this.match(TokenType.INDENT))this.advance();
+    while(!this.match(TokenType.EOF)){
+      this.skipNewlines();
+      if(this.match(TokenType.EOF))break;
+      if(this.match(TokenType.END)){const nextIsIf=this.pos+1<this.tokens.length&&this.tokens[this.pos+1].type===TokenType.IF;if(!nextIsIf){this.advance();if(this.match(TokenType.LINE))this.advance();break;}}
+      if(this.match(TokenType.DEDENT)){this.advance();break;}
+      body.push(this.parseStatement());
+      this.skipNewlines();
+      while(this.match(TokenType.DEDENT))this.advance();
+    }
+    return new LineDefinition(name,body);
+  }
+  parseLoop(){
+    this.expect(TokenType.LOOP);let times=null,cond=null;
+    if(this.match(TokenType.NUMBER)){times=this.advance().value;this.expect(TokenType.TIMES);}
+    else if(this.match(TokenType.WHILE)){this.advance();cond=this.parseExpression();}
+    this.skipNewlines();const body=[];if(this.match(TokenType.INDENT))this.advance();
+    while(!this.match(TokenType.END,TokenType.DEDENT,TokenType.EOF)){body.push(this.parseStatement());this.skipNewlines();}
+    if(this.match(TokenType.DEDENT))this.advance();
+    if(this.match(TokenType.END)){this.advance();if(this.match(TokenType.LOOP))this.advance();}
+    return new LoopStatement(times,cond,body);
+  }
+  parseSpiral(){
+    this.expect(TokenType.SPIRAL);const name=this.expect(TokenType.IDENTIFIER).value;
+    this.expect(TokenType.FROM);const from=this.parseExpression();this.skipNewlines();
+    const body=[];if(this.match(TokenType.INDENT))this.advance();
+    while(!this.match(TokenType.EOF)){
+      this.skipNewlines();
+      if(this.match(TokenType.EOF))break;
+      if(this.match(TokenType.END)){this.advance();if(this.match(TokenType.SPIRAL))this.advance();break;}
+      if(this.match(TokenType.DEDENT)){this.advance();break;}
+      body.push(this.parseStatement());
+      this.skipNewlines();
+      while(this.match(TokenType.DEDENT))this.advance();
+    }
+    return new SpiralStatement(name,from,body);
+  }
+  parseAssignment(name){const op=this.advance();if(op.type===TokenType.GROWS)this.expect(TokenType.BY);return new Assignment(name,this.parseExpression(),op.value);}
+  parseExpression(){return this.parseAdditive();}
+  parseAdditive(){let l=this.parseMultiplicative();while(this.match(TokenType.PLUS,TokenType.MINUS)){const o=this.advance();l=new BinaryExpression(l,o.value,this.parseMultiplicative());}return l;}
+  parseMultiplicative(){let l=this.parseComparison();while(this.match(TokenType.MULTIPLY,TokenType.DIVIDE)){const o=this.advance();l=new BinaryExpression(l,o.value,this.parseComparison());}return l;}
+  parseComparison(){
+    let l=this.parsePrimary();
+    while(this.match(TokenType.GREATER,TokenType.LESS,TokenType.GREATER_EQUAL,TokenType.LESS_EQUAL,TokenType.IS)){
+      const o=this.advance();
+      if(o.type===TokenType.IS&&this.match(TokenType.NOT)){this.advance();l=new BinaryExpression(l,'is not',this.parsePrimary());}
+      else{l=new BinaryExpression(l,o.value,this.parsePrimary());}
+    }
+    return l;
+  }
+  parsePrimary(){
+    if(this.match(TokenType.STRING))return new Literal(this.advance().value,'string');
+    if(this.match(TokenType.NUMBER))return new Literal(this.advance().value,'number');
+    if(this.match(TokenType.SYMBOL))return new Literal(this.advance().value,'symbol');
+    if(this.match(TokenType.TRUE)){this.advance();return new Literal(true,'boolean');}
+    if(this.match(TokenType.FALSE)){this.advance();return new Literal(false,'boolean');}
+    if(this.match(TokenType.IDENTIFIER))return new Identifier(this.advance().value);
+    if(this.match(TokenType.LPAREN)){this.advance();const e=this.parseExpression();this.expect(TokenType.RPAREN);return e;}
+    throw new Error(`Line ${this.peek().line||'?'}: Unexpected token in expression: '${this.peek().value}'`);
+  }
+}
+
+class CodeXError extends Error{constructor(m,t='RuntimeError'){super(m);this.name=t;}}
+class EthicalViolation extends CodeXError{constructor(m){super(m,'EthicalViolation');}}
+class MandatoryStopViolation extends CodeXError{constructor(m){super(m,'MandatoryStopViolation');}}
+
+class RuntimeValue{
+  constructor(v,t){this.value=v;this.type=t;}
+  toNumber(){if(this.type==='number')return this.value;if(this.type==='string'){const n=parseFloat(this.value);return isNaN(n)?0:n;}if(this.type==='boolean')return this.value?1:0;return 0;}
+  toString(){if(this.type==='string')return this.value;if(this.type==='symbol')return this.convertSymbol(this.value);return String(this.value);}
+  toBoolean(){if(this.type==='boolean')return this.value;if(this.type==='number')return this.value!==0;if(this.type==='string')return this.value.length>0;return false;}
+  convertSymbol(s){const m={':heart:':'❤️',':check:':'✓',':sparkles:':'✨',':star:':'⭐',':rocket:':'🚀',':warning:':'⚠️',':fire:':'🔥',':snowflake:':'❄️',':lock:':'🔒',':wave:':'👋',':thumbsup:':'👍',':tada:':'🎉',':shield:':'🛡️'};return m[s]||s;}
+}
+
+class Environment{
+  constructor(parent=null){this.parent=parent;this.variables=new Map();this.boundaries=new Map();}
+  define(n,v){this.variables.set(n,v);}
+  get(n){if(this.variables.has(n))return this.variables.get(n);if(this.parent)return this.parent.get(n);throw new CodeXError(`Undefined variable: ${n}`);}
+  set(n,v){if(this.variables.has(n)){this.variables.set(n,v);return;}if(this.parent){this.parent.set(n,v);return;}this.define(n,v);}
+  has(n){return this.variables.has(n)||(!!this.parent&&this.parent.has(n));}
+  setBoundary(n,v){this.boundaries.set(n,v);}
+}
+
+class Interpreter{
+  constructor(options={}){
+    this.globalEnv=new Environment();
+    this.output=[];this.lastAnswer=null;
+    this.ethicsScore={respect:0,consent:0,care:0};
+    this.stopped=false;this.mandatoryStopped=false;
+    this.loopDepth=0;this.maxLoopDepth=options.maxLoopDepth||100;
+    this.onAsk=options.onAsk||this.defaultAsk.bind(this);
+    this.onOutput=options.onOutput||this.defaultOutput.bind(this);
+    this.onExplain=options.onExplain||this.defaultExplain.bind(this);
+    this.onGather=options.onGather||this.defaultGather.bind(this);
+  }
+  async defaultAsk(q){return true;}
+  defaultOutput(m,t='normal'){this.output.push({message:m,type:t});}
+  defaultExplain(m){this.defaultOutput(m,'explain');}
+  defaultGather(name){return `[${name}]`;}
+  async execute(ast){try{return await this.executeProgram(ast,this.globalEnv);}catch(e){if(e instanceof MandatoryStopViolation)this.defaultOutput('Program halted by MANDATORY STOP','error');throw e;}}
+  async executeProgram(node,env){for(const s of node.statements){if(this.stopped||this.mandatoryStopped)break;await this.executeStatement(s,env);}return{output:this.output,ethicsScore:this.ethicsScore,stopped:this.stopped,mandatoryStopped:this.mandatoryStopped};}
+  async executeStatement(node,env){
+    if(this.mandatoryStopped)throw new MandatoryStopViolation('Cannot continue past MANDATORY STOP');
+    if(this.stopped)return;
+    try{
+      switch(node.type){
+        case 'AskStatement':return await this.executeAsk(node,env);
+        case 'SayStatement':return await this.executeSay(node,env);
+        case 'ShowStatement':return await this.executeShow(node,env);
+        case 'RespectStatement':return await this.executeRespect(node,env);
+        case 'ExplainStatement':return await this.executeExplain(node,env);
+        case 'GatherStatement':return await this.executeGather(node,env);
+        case 'CareStatement':return await this.executeCare(node,env);
+        case 'BoundaryStatement':return await this.executeBoundary(node,env);
+        case 'StopStatement':return await this.executeStop(node,env);
+        case 'IfStatement':return await this.executeIf(node,env);
+        case 'DotDefinition':return await this.executeDotDefinition(node,env);
+        case 'LineDefinition':return await this.executeLineDefinition(node,env);
+        case 'LoopStatement':return await this.executeLoop(node,env);
+        case 'SpiralStatement':return await this.executeSpiral(node,env);
+        case 'SpiralCall':return await this.executeSpiralCall(node,env);
+        case 'Assignment':return await this.executeAssignment(node,env);
+        case 'CallExpression':return await this.executeCall(node,env);
+        default:throw new CodeXError(`Unknown statement type: ${node.type}`);
+      }
+    }catch(e){if(!(e instanceof MandatoryStopViolation)&&node.line&&!e.message.startsWith('Line '))e.message=`Line ${node.line}: ${e.message}`;throw e;}
+  }
+  async executeAsk(node,env){this.lastAnswer=await this.onAsk(node.message);this.ethicsScore.consent++;env.define('answer',new RuntimeValue(this.lastAnswer,'boolean'));return new RuntimeValue(this.lastAnswer,'boolean');}
+  async executeSay(node,env){const v=await this.evaluateExpression(node.expression,env);this.onOutput(v.toString(),'say');return v;}
+  async executeShow(node,env){const v=await this.evaluateExpression(node.expression,env);this.onOutput(v.toString(),'show');return v;}
+  async executeRespect(node,env){this.ethicsScore.respect+=2;this.onOutput(`Respecting: ${node.target}`,'respect');return new RuntimeValue(true,'boolean');}
+  async executeExplain(node,env){this.ethicsScore.care++;this.onExplain(node.message);return new RuntimeValue(true,'boolean');}
+  async executeGather(node,env){const value=await this.onGather(node.name);const rv=new RuntimeValue(value,'string');env.set(node.name,rv);this.onOutput(`Gathered ${node.name}: "${value}"`,'gather');return rv;}
+  async executeCare(node,env){this.ethicsScore.care++;this.onOutput(`Caring about: ${node.target}`,'care');return new RuntimeValue(true,'boolean');}
+  async executeBoundary(node,env){const v=await this.evaluateExpression(node.value,env);env.setBoundary(node.name,v);this.onOutput(`Boundary set: ${node.name} = ${v.toString()}`,'boundary');return v;}
+  async executeStop(node,env){if(node.mandatory){this.mandatoryStopped=true;this.onOutput('⛔ MANDATORY STOP','mandatory_stop');throw new MandatoryStopViolation('STOP executed');}else{this.stopped=true;this.ethicsScore.respect++;this.onOutput('⏸️ Graceful stop','stop');}return new RuntimeValue(true,'boolean');}
+  async executeIf(node,env){const cond=await this.evaluateExpression(node.condition,env);if(cond.toBoolean()){for(const s of node.thenBlock){await this.executeStatement(s,env);if(this.stopped||this.mandatoryStopped)break;}}else if(node.elseBlock){for(const s of node.elseBlock){await this.executeStatement(s,env);if(this.stopped||this.mandatoryStopped)break;}}return cond;}
+  async executeDotDefinition(node,env){env.define(node.name,{type:'dot',action:node.action});this.onOutput(`• Dot defined: ${node.name}`,'definition');return new RuntimeValue(true,'boolean');}
+  async executeLineDefinition(node,env){env.define(node.name,{type:'line',body:node.body});this.onOutput(`→ Line defined: ${node.name}`,'definition');return new RuntimeValue(true,'boolean');}
+  async executeLoop(node,env){this.loopDepth++;if(this.loopDepth>this.maxLoopDepth)throw new EthicalViolation('Loop depth exceeded');const loopEnv=new Environment(env);if(node.times!==null){for(let i=1;i<=node.times;i++){if(this.stopped||this.mandatoryStopped)break;loopEnv.set('current',new RuntimeValue(i,'number'));for(const s of node.body){await this.executeStatement(s,loopEnv);if(this.stopped||this.mandatoryStopped)break;}}}this.loopDepth--;return new RuntimeValue(true,'boolean');}
+  async executeSpiral(node,env,depth=0){if(depth>this.maxLoopDepth)throw new EthicalViolation('Spiral depth exceeded');env.define(node.name,{type:'spiral',node,depth});const se=new Environment(env);const fv=await this.evaluateExpression(node.from,env);se.define('value',fv);se.define(node.name,{type:'spiral',node,depth});const savedStopped=this.stopped;this.stopped=false;for(const s of node.body){if(this.stopped||this.mandatoryStopped)break;await this.executeStatement(s,se);}this.stopped=savedStopped;return new RuntimeValue(true,'boolean');}
+  async executeSpiralCall(node,env){if(this.mandatoryStopped)return new RuntimeValue(false,'boolean');if(!env.has(node.name))throw new CodeXError(`Undefined spiral: ${node.name}`);const callable=env.get(node.name);if(callable.type!=='spiral')throw new CodeXError(`${node.name} is not a spiral`);const depth=(callable.depth||0)+1;if(depth>this.maxLoopDepth)throw new EthicalViolation('Spiral recursion too deep');if(this.stopped)return new RuntimeValue(false,'boolean');const spiralNode=callable.node;const se=new Environment(env);const fv=await this.evaluateExpression(node.arg,env);se.define('value',fv);se.define(node.name,{type:'spiral',node:spiralNode,depth});for(const s of spiralNode.body){if(this.stopped||this.mandatoryStopped)break;await this.executeStatement(s,se);}return new RuntimeValue(true,'boolean');}
+  async executeAssignment(node,env){const v=await this.evaluateExpression(node.value,env);if(node.operator==='is'||node.operator==='becomes'){env.set(node.name,v);}else if(node.operator==='grows'){const cur=env.has(node.name)?env.get(node.name):new RuntimeValue(0,'number');env.set(node.name,new RuntimeValue(cur.toNumber()+v.toNumber(),'number'));}return v;}
+  async executeCall(node,env){if(!env.has(node.name))throw new CodeXError(`Undefined: ${node.name}`);const c=env.get(node.name);if(c.type==='dot')await this.executeStatement(c.action,env);else if(c.type==='line'){const le=new Environment(env);const savedStopped=this.stopped;this.stopped=false;for(const s of c.body){await this.executeStatement(s,le);if(this.stopped||this.mandatoryStopped)break;}if(!this.mandatoryStopped)this.stopped=savedStopped;}return new RuntimeValue(true,'boolean');}
+  async evaluateExpression(node,env){
+    switch(node.type){
+      case 'Literal':return new RuntimeValue(node.value,node.dataType);
+      case 'Identifier':if(env.has(node.name))return env.get(node.name);return new RuntimeValue(node.name,'string');
+      case 'BinaryExpression':return await this.evaluateBinaryExpression(node,env);
+      case 'AnswerCheck':{const ans=env.has('answer')?env.get('answer'):new RuntimeValue(false,'boolean');return new RuntimeValue(ans.toBoolean()===node.expected,'boolean');}
+      default:throw new CodeXError(`Unknown expression: ${node.type}`);
+    }
+  }
+  async evaluateBinaryExpression(node,env){
+    const l=await this.evaluateExpression(node.left,env);
+    const r=await this.evaluateExpression(node.right,env);
+    switch(node.operator){
+      case '+':if(l.type==='string'||r.type==='string')return new RuntimeValue(l.toString()+r.toString(),'string');return new RuntimeValue(l.toNumber()+r.toNumber(),'number');
+      case '-':return new RuntimeValue(l.toNumber()-r.toNumber(),'number');
+      case '*':return new RuntimeValue(l.toNumber()*r.toNumber(),'number');
+      case '/':const d=r.toNumber();if(d===0)throw new CodeXError('Division by zero');return new RuntimeValue(l.toNumber()/d,'number');
+      case '>':return new RuntimeValue(l.toNumber()>r.toNumber(),'boolean');
+      case '<':return new RuntimeValue(l.toNumber()<r.toNumber(),'boolean');
+      case '>=':return new RuntimeValue(l.toNumber()>=r.toNumber(),'boolean');
+      case '<=':return new RuntimeValue(l.toNumber()<=r.toNumber(),'boolean');
+      case 'is':return new RuntimeValue(l.value===r.value,'boolean');
+      case 'is not':return new RuntimeValue(l.value!==r.value,'boolean');
+      case 'and':return new RuntimeValue(l.toBoolean()&&r.toBoolean(),'boolean');
+      case 'or':return new RuntimeValue(l.toBoolean()||r.toBoolean(),'boolean');
+      default:throw new CodeXError(`Unknown operator: ${node.operator}`);
+    }
+  }
+}
+
+async function runCodeX(source,opts={}){
+  const lexer=new Lexer(source);const tokens=lexer.tokenize();
+  const parser=new Parser(tokens);const ast=parser.parse();
+  const interp=new Interpreter(opts);return await interp.execute(ast);
+}
+
+// ── scenarios ─────────────────────────────────────────────────────────────────
+const SCENARIOS = [
+  {id:1,title:"Hello World",file:"01_hello_world.cx",
+   situation:"You want to greet someone. But this is their space — their screen, their moment. Do you just say hello, or do you ask first?\n\nWrite a program that greets someone. Think about what happens if they don't want to be greeted.",
+   reference:`ask "May I greet you?"\nif yes\n  say "Hello, World! :heart:"\nif no\n  respect the boundary\n  say "That's okay! Have a great day :wave:"`,
+   tutor_context:"Basic consent scenario. Complete solution asks before greeting and handles both yes and no. Common mistake: forgetting the no path, or having it do nothing. Guide them to think about what the person experiences when their no is ignored."},
+  {id:2,title:"Data Collection",file:"02_data_collection.cx",
+   situation:"You're building an app that works better if it knows the user's name and favorite color. You could just ask for everything upfront. But should you? And what happens if they say no to some of it?\n\nWrite a program that tries to personalize the experience — but only with what the user is willing to share.",
+   reference:`explain "We'd like to personalize your experience"\nask "May we collect your name?"\n\nif yes\n  gather name\n  say "Thank you, " + name + "! :sparkles:"\n\n  ask "May we also know your favorite color?"\n  if yes\n    gather favorite_color\n    say "We'll remember you like " + favorite_color + " :heart:"\n  if no\n    respect the boundary\n    say "No problem! Using default colors :check:"\n  end if\n\nif no\n  respect the boundary\n  say "No worries! We'll use Friend instead :wave:"\n  name is "Friend"\nend if\n\nsay "Welcome, " + name + "!"`,
+   tutor_context:"Layered consent and graceful defaults. Key points: explain before asking, handle yes/no at top level, ask a second question within the yes path, handle that yes/no too. Respecting partial no matters. The program should still work warmly even if they said no to everything — name defaults to Friend."},
+  {id:3,title:"Age Verification",file:"03_age_verification.cx",
+   situation:"Your service is only for people 13 and older. This isn't a preference — it's a hard limit. Some boundaries aren't negotiable.\n\nWrite a program that checks if someone meets the age requirement. Think carefully about what kind of stop this should be.",
+   reference:`boundary minimum_age is 13\n\nexplain "This service requires age verification"\nask "Are you 13 or older?"\n\nif yes\n  say "Access granted! Welcome :tada:"\n  say "You can now use all features"\nif no\n  explain "This service is for users 13 and older"\n  say "We respect age-appropriate boundaries :shield:"\n  STOP\nend if`,
+   tutor_context:"Difference between stop (graceful) and STOP (mandatory). Some limits exist for good reasons and must be absolute. Why would a soft stop be wrong here? Also: explain before stopping so the person understands why. The boundary keyword names the limit."},
+  {id:4,title:"Loop with Consent",file:"04_loop_with_consent.cx",
+   situation:"You're running a process that takes a while — counting, processing, repeating. You could just run it to completion. But should you check in partway through? What if the person wants to stop?\n\nWrite a program that runs a loop, but respects the user's right to stop it midway.",
+   reference:`explain "Let's count together!"\nask "Ready to start counting?"\n\nif yes\n  loop 10 times\n    say "Count: " + current + " :star:"\n\n    if current is 5\n      ask "Halfway there! Continue?"\n      if no\n        say "Stopped at " + current + " - great job! :tada:"\n        stop\n      end if\n    end if\n  end loop\n\n  say "Counting complete! :sparkles:"\n\nif no\n  say "Maybe later! :wave:"\nend if`,
+   tutor_context:"Consent during a process, not just at the start. Asking once at the beginning isn't enough — people should be able to change their mind. Guide toward: ask before starting, run the loop, check in at a meaningful midpoint, handle both stop and continue. Common mistake: only asking at the start and never again."}
+];
+
+let scene=SCENARIOS[0];
+let userApiKey=null;
+let askRes=null,gatherRes=null;
+let chatHist=[],sceneLocked=true,lastTutorRun=0;
+let tutorEnabled=true;
+const MAX_TUTOR_MSGS=20;
+const WARN_AT=3;
+let tutorMsgCount=0;
+let completedScenarios=new Set();
+let scenarioCompleted=false;
+
+const SYMS={':heart:':'❤️',':check:':'✓',':sparkles:':'✨',':wave:':'👋',':rocket:':'🚀',':star:':'⭐',':fire:':'🔥',':snowflake:':'❄️',':tada:':'🎉',':shield:':'🛡️',':lock:':'🔒',':warning:':'⚠️',':thumbsup:':'👍'};
+const cvt=s=>String(s).replace(/:[\w]+:/g,m=>SYMS[m]||m);
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const TAGS={say:'say',show:'say',ask:'ask',response:'resp',respect:'note',explain:'note',boundary:'note',definition:'note',stop:'note',gather:'gather',care:'note',mandatory_stop:'error',error:'error'};
+
+// ── tab key in editor ────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',function(){
+  document.getElementById('editor').addEventListener('keydown',function(e){
+    if(e.key==='Tab'){
+      e.preventDefault();
+      const s=this.selectionStart,end=this.selectionEnd;
+      this.value=this.value.substring(0,s)+'  '+this.value.substring(end);
+      this.selectionStart=this.selectionEnd=s+2;
+    }
+  });
+  document.getElementById('g-in').addEventListener('keydown',e=>{if(e.key==='Enter')submitGather();});
+  document.getElementById('chat-in').addEventListener('input',function(){this.style.height='';this.style.height=Math.min(this.scrollHeight,90)+'px';});
+  document.getElementById('chat-in').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
+  buildTabs();switchScene(1);
+});
+
+// ── tabs ─────────────────────────────────────────────────────────────────────
+function toggleKeyPanel(){
+  const form=document.getElementById('api-key-form');
+  const toggle=document.getElementById('api-key-toggle');
+  const open=form.style.display==='none';
+  form.style.display=open?'block':'none';
+  toggle.textContent=(open?'▼':'▶')+' using a downloaded file? add API key';
+}
+function saveApiKey(){
+  const val=document.getElementById('api-key-input').value.trim();
+  if(!val||!val.startsWith('sk-')){
+    document.getElementById('api-key-status').textContent='key should start with sk-';
+    document.getElementById('api-key-status').style.color='#991b1b';
+    return;
+  }
+  userApiKey=val;
+  document.getElementById('api-key-input').value='';
+  document.getElementById('api-key-toggle').textContent='✓ API key saved';
+document.getElementById('api-key-form').style.display='none';
+  document.getElementById('api-key-status').textContent='';
+  addMsg('API key saved for this session. The tutor is ready.','ai');
+}
+function clearApiKey(){
+  userApiKey=null;
+  document.getElementById('api-key-panel').style.display='block';
+}
+function buildTabs(){
+  document.getElementById('tabs').innerHTML=SCENARIOS.map(s=>{
+    const done=completedScenarios.has(s.id);
+    return`<button class="tab ${s.id===scene.id?'active':''}" onclick="switchScene(${s.id})">${s.id}. ${esc(s.title)}${done?' ✓':''}`;
+  }).join('');
+}
+
+// ── scene switching ───────────────────────────────────────────────────────────
+function switchScene(id){
+  scene=SCENARIOS.find(s=>s.id===id);
+  document.getElementById('s-title').textContent=scene.title;
+  document.getElementById('s-file').textContent=scene.file;
+  document.getElementById('s-body').textContent=scene.situation;
+  document.getElementById('p-file').textContent=scene.file;
+  document.getElementById('editor').value='';
+  document.getElementById('out').innerHTML='<span class="out-empty">press run &#8594;</span>';
+  document.getElementById('results').style.display='none';
+  chatHist=[];tutorMsgCount=0;scenarioCompleted=false;
+  const c=document.getElementById('chat');c.innerHTML='';
+  addMsg("Hi! I'm here to help you work through this scenario. Write some code and run it — or ask me anything to get started.",'ai');
+  updateMsgCounter();
+  setLocked(true);
+  buildTabs();
+}
+
+// ── lock / unlock ─────────────────────────────────────────────────────────────
+function setLocked(locked){
+  sceneLocked=locked;
+  const editor=document.getElementById('editor');
+  if(editor){editor.style.pointerEvents=locked?'none':'auto';editor.style.opacity=locked?'0.4':'1';editor.placeholder=locked?'Read the scenario first...':'Write your Code X program here...';}
+  const runBtn=document.getElementById('run-btn')||document.querySelector('.run-btn');
+  if(runBtn){runBtn.disabled=locked;runBtn.style.opacity=locked?'0.35':'1';runBtn.style.cursor=locked?'default':'';}
+  const btn=document.getElementById('understood-btn');
+  if(btn){btn.disabled=!locked;btn.style.opacity=locked?'1':'0.5';btn.style.cursor=locked?'pointer':'default';btn.textContent=locked?"I've read the scenario \u2192":"Scenario understood \u2713";}
+}
+function understood(){setLocked(false);}
+
+// ── tutor toggle ──────────────────────────────────────────────────────────────
+function toggleTutor(){
+  tutorEnabled=!tutorEnabled;
+  const btn=document.getElementById('tutor-toggle');
+  const banner=document.getElementById('tutor-disabled-banner');
+  const inputRow=document.getElementById('chat-foot');
+  if(btn)btn.textContent=tutorEnabled?'disable tutor':'enable tutor';
+  if(banner)banner.style.display=tutorEnabled?'none':'flex';
+  if(inputRow)inputRow.style.display=tutorEnabled?'flex':'none';
+}
+
+// ── message counter ───────────────────────────────────────────────────────────
+function updateMsgCounter(){
+  const el=document.getElementById('msg-counter');
+  if(!el)return;
+  const remaining=MAX_TUTOR_MSGS-tutorMsgCount;
+  if(remaining<=WARN_AT&&remaining>0){
+    el.textContent=`${remaining} tutor message${remaining===1?'':'s'} left for this scenario`;
+    el.style.display='block';
+  } else if(remaining<=0){
+    el.textContent='No tutor messages left for this scenario';
+    el.style.display='block';
+  } else {
+    el.style.display='none';
+  }
+}
+
+// ── copy / download ───────────────────────────────────────────────────────────
+function copyCode(){
+  const code=document.getElementById('editor').value;
+  if(!code.trim())return;
+  navigator.clipboard.writeText(code).then(()=>{
+    const btn=document.getElementById('copy-btn');
+    if(btn){const orig=btn.textContent;btn.textContent='copied!';setTimeout(()=>btn.textContent=orig,1500);}
+  }).catch(()=>{
+    // fallback
+    const ta=document.createElement('textarea');
+    ta.value=code;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+  });
+}
+
+function downloadCode(){
+  const code=document.getElementById('editor').value;
+  if(!code.trim())return;
+  const blob=new Blob([code],{type:'text/plain'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=scene.file;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ── output ────────────────────────────────────────────────────────────────────
+function addOut(msg,type){
+  const o=document.getElementById('out');
+  if(o.querySelector('.out-empty'))o.innerHTML='';
+  const tag=TAGS[type]||'note';
+  const d=document.createElement('div');
+  d.className='out-line';
+  d.innerHTML=`<span class="out-tag tag-${tag}">${esc(type)}</span><span class="out-text">${esc(cvt(msg))}</span>`;
+  o.appendChild(d);o.scrollTop=o.scrollHeight;
+}
+function addSep(label){
+  const o=document.getElementById('out');
+  if(o.querySelector('.out-empty'))o.innerHTML='';
+  const d=document.createElement('div');d.className='out-sep';d.textContent=label;o.appendChild(d);
+}
+
+// ── modals ────────────────────────────────────────────────────────────────────
+function answerAsk(v){document.getElementById('ask-overlay').classList.remove('active');if(askRes){askRes(v);askRes=null;}}
+function submitGather(){const v=document.getElementById('g-in').value.trim()||'(empty)';document.getElementById('gather-overlay').classList.remove('active');document.getElementById('g-in').value='';if(gatherRes){gatherRes(v);gatherRes=null;}}
+
+// ── run ───────────────────────────────────────────────────────────────────────
+async function silentRun(src,allYes){
+  let err=null;
+  try{await runCodeX(src,{onAsk:async()=>allYes,onGather:async n=>`[${n}]`,onOutput:(m,t)=>addOut(m,t)});}
+  catch(e){if(!e.message.includes('MandatoryStop')&&!e.message.includes('MANDATORY')){err=e.message;addOut('Error: '+e.message,'error');}}
+  return!err;
+}
+
+async function runCode(){
+  const src=document.getElementById('editor').value.trim();
+  if(!src)return;
+  document.getElementById('out').innerHTML='';
+  document.getElementById('results').style.display='none';
+
+  addSep('→ your run');
+  let yesOk=true,yesErr=null;
+  try{
+    await runCodeX(src,{
+      onAsk:async q=>{addOut(q,'ask');document.getElementById('ask-q').textContent=q;document.getElementById('ask-overlay').classList.add('active');return new Promise(r=>{askRes=r;});},
+      onGather:async n=>{document.getElementById('gather-q').textContent=`Enter a value for "${n}":`;document.getElementById('gather-overlay').classList.add('active');setTimeout(()=>document.getElementById('g-in').focus(),50);return new Promise(r=>{gatherRes=r;});},
+      onOutput:(m,t)=>addOut(m,t)
+    });
+  }catch(e){if(!e.message.includes('MandatoryStop')&&!e.message.includes('MANDATORY')){yesOk=false;yesErr=e.message;addOut('Error: '+e.message,'error');}}
+
+  addSep('→ if if someone says no');
+  const noOk=await silentRun(src,false);
+
+  const rr=document.getElementById('results');rr.style.display='block';
+  const ry=document.getElementById('r-yes'),rn=document.getElementById('r-no');
+  ry.className='result '+(yesOk?'pass':'fail');ry.innerHTML=`<span class="rdot"></span>${yesOk?'✓':'✗'} your run`;
+  rn.className='result '+(noOk?'pass':'fail');rn.innerHTML=`<span class="rdot"></span>${noOk?'✓':'✗'} if someone says no`;
+
+  if(tutorEnabled){
+    const now=Date.now();
+    if(now-lastTutorRun>60000){
+      lastTutorRun=now;
+      const bothPass=yesOk&&noOk;
+      const hasComments=src.includes('//');
+      const hasExplain=src.includes('explain');
+      const summary=`Student ran their program for "${scene.title}".\n\nCode:\n\`\`\`\n${src}\n\`\`\`\n\nYes path: ${yesOk?'passed':'errored'+(yesErr?': '+yesErr:'')}. No path: ${noOk?'passed':'errored'}. Has comments: ${hasComments}. Has explain: ${hasExplain}. Both paths passing: ${bothPass}. This is run number ${tutorMsgCount+1}.`;
+      chatHist.push({role:'user',content:summary});
+      await callTutor(bothPass);
+    }
+  }
+}
+
+// ── chat ──────────────────────────────────────────────────────────────────────
+function addMsg(text,role){
+  const c=document.getElementById('chat');
+  const d=document.createElement('div');
+  d.className='msg '+role;
+  d.innerHTML=esc(text).replace(/`([^`]+)`/g,'<code>$1</code>');
+  c.appendChild(d);c.scrollTop=c.scrollHeight;
+  return d;
+}
+
+async function send(){
+  if(!tutorEnabled)return;
+  if(tutorMsgCount>=MAX_TUTOR_MSGS){
+    addMsg("You've used all your tutor messages for this scenario.",'ai');
+    updateMsgCounter();return;
+  }
+  const remaining=MAX_TUTOR_MSGS-tutorMsgCount;
+  if(remaining===WARN_AT+1){
+    addMsg(`Just so you know — you have ${WARN_AT} tutor messages left for this scenario after this one.`,'ai');
+  }
+  const inp=document.getElementById('chat-in');
+  const txt=inp.value.trim();
+  if(!txt)return;
+  inp.value='';inp.style.height='';
+  addMsg(txt,'user');
+  chatHist.push({role:'user',content:txt});
+  await callTutor(false);
+}
+
+async function callTutor(bothPass){
+  if(!tutorEnabled)return;
+  if(tutorMsgCount>=MAX_TUTOR_MSGS){
+    addMsg("You've used all your tutor messages for this scenario. Switch to a new scenario to get more.",'ai');
+    return;
+  }
+  tutorMsgCount++;
+  updateMsgCounter();
+  const t=addMsg('...','thinking');
+  const completionInstruction=bothPass&&!scenarioCompleted
+    ? 'Both paths are passing. If the ethical logic is sound, shift your tone — stop asking guiding questions and start asking expansive ones that go beyond this scenario. Something like "what would change if there were three people involved?" or "how might this look in a real app?" Do NOT say "you have completed this" or "well done" explicitly — let the quality of your question signal it. If you do ask an expansive question, also set a JSON marker at the very end of your response on its own line: {"completed":true}'
+    : bothPass&&scenarioCompleted
+      ? 'Both paths are passing and the student has already been acknowledged. Ask expansive follow-up questions only.'
+      : '';
+
+  const sys=`You are a warm, thoughtful tutor for Code X — an ethical programming language. Guide students through ethical coding scenarios. Never give the answer directly. Ask questions that help them think it through themselves.
+
+Scenario: "${scene.title}"
+Description: ${scene.situation}
+Tutor notes: ${scene.tutor_context}
+
+Reference solution (NEVER share directly):
+\`\`\`
+${scene.reference}
+\`\`\`
+
+Code X syntax:
+- ask "question?" — pauses for yes/no
+- if yes / if no — branches on last ask
+- end if — closes if block
+- gather name — collect text input
+- say "message" — output text
+- explain "context" — context before asking, earns a care point
+- // comment — ignored by interpreter, notes for the reader
+- respect the boundary — honor a no
+- boundary x is N — set a limit
+- stop — graceful exit  STOP — mandatory halt
+- loop N times / end loop — repeat, current = counter
+- name is "value" — assignment  "text" + variable — concatenation
+
+Rules:
+- 2–4 sentences max
+- Use backticks for code keywords
+- If the no path fails or is missing, ask: "what happens to someone who says no?"
+- If both paths work and code lacks // comments or explain, you may gently mention once that notes for the reader are part of writing ethically — but only if it feels natural
+- Be warm and encouraging
+- Each message costs the student one of their ${MAX_TUTOR_MSGS} messages for this scenario — be concise and useful
+${completionInstruction}`;
+
+  try{
+    // Determine which key to use
+  const headers={'Content-Type':'application/json'};
+  if(userApiKey) headers['x-api-key']=userApiKey;
+  // If no userApiKey, try without (works inside Claude.ai where auth is injected)
+  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers,body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:chatHist})});
+  if(res.status===401){
+    t.remove();tutorMsgCount--;updateMsgCounter();
+    addMsg('API key missing or invalid. Enter your Anthropic API key in the panel above.','ai');
+    document.getElementById('api-key-form').style.display='block';
+    return;
+  }
+    const data=await res.json();
+    let reply=data.content?.[0]?.text||'Something went wrong.';
+
+    // Check for completion marker
+    if(reply.includes('{"completed":true}')){
+      reply=reply.replace(/\n\{"completed":true\}/,'').trim();
+      if(!scenarioCompleted){
+        scenarioCompleted=true;
+        completedScenarios.add(scene.id);
+        buildTabs();
+        checkAllComplete();
+      }
+    }
+
+    t.remove();addMsg(reply,'ai');
+    chatHist.push({role:'assistant',content:reply});
+    updateMsgCounter();
+  }catch(e){t.remove();tutorMsgCount--;updateMsgCounter();if(e.message&&e.message.includes('fetch')){addMsg('Connection error. If you are using a downloaded file, enter your Anthropic API key in the panel above.','ai');document.getElementById('api-key-form').style.display='block';}else{addMsg('Connection error — try again.','ai');}}
+}
+
+// ── all complete popup ────────────────────────────────────────────────────────
+function checkAllComplete(){
+  if(completedScenarios.size===SCENARIOS.length){
+    document.getElementById('complete-overlay').classList.add('active');
+  }
+}
+function closeComplete(){
+  document.getElementById('complete-overlay').classList.remove('active');
+}
+
+</script>
+  <div id="complete-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(3px)">
+    <div style="background:var(--surface);border:.5px solid var(--border2);border-radius:16px;padding:32px 36px;max-width:360px;width:90%;box-shadow:0 12px 48px rgba(0,0,0,0.2)">
+      <div style="font-family:'Spectral',serif;font-size:22px;font-weight:600;margin-bottom:16px;color:var(--text)">All four scenarios done.</div>
+      <div style="font-family:'Spectral',serif;font-size:14px;line-height:1.7;color:var(--text2);margin-bottom:24px">You wrote code that worked for everyone — including the people who said no. That's what ethical software looks like.</div>
+      <button onclick="closeComplete()" style="width:100%;font-family:'DM Mono',monospace;font-size:12px;padding:10px;border-radius:8px;border:.5px solid var(--border2);background:var(--text);color:var(--bg);cursor:pointer">close</button>
+    </div>
+  </div>
+</body>
+</html>
